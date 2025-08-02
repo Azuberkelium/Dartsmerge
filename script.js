@@ -15,11 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
         4096: '#800080', // Purple
         'miss': '#696969' // DimGray
     };
-    
+
     // Game state variables
     let grid = []; // 5x5 grid
     let dropZoneBlocks = [];
-    let selectedBlock = null;
+    let draggedBlock = null; // The block being dragged
     let highScore = 0;
     let currentScore = 0;
 
@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
         createBlockSelection();
         createEmptyGrid();
         updateScores();
-        fillDropZone();
     }
 
     function createBlockSelection() {
@@ -70,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.className = 'grid-cell';
                 cell.dataset.row = i;
                 cell.dataset.col = j;
-                cell.addEventListener('click', () => handleGridClick(j));
+                cell.addEventListener('dragover', e => e.preventDefault()); // Allows us to drop
+                cell.addEventListener('drop', () => handleDrop(j));
                 gameGridElement.appendChild(cell);
             }
             grid.push(row);
@@ -83,62 +83,70 @@ document.addEventListener('DOMContentLoaded', () => {
         highScoreValueElement.textContent = highScore;
     }
 
-    // --- Game Logic Functions (to be filled in) ---
+    // --- Game Logic Functions ---
 
-  function handleBlockSelection(value) {
-    // Only add to the drop zone if there's space.
-    if (dropZoneBlocks.length < 3) {
-        const blockElement = document.createElement('div');
-        blockElement.className = 'drop-zone-block';
+    function handleBlockSelection(value) {
+        if (dropZoneBlocks.length < 3) {
+            const blockElement = document.createElement('div');
+            blockElement.className = 'drop-zone-block';
+            
+            if (value === 'miss') {
+                blockElement.textContent = 'Miss';
+                blockElement.style.backgroundColor = blockColors['miss'];
+                blockElement.dataset.value = 'miss';
+                blockElement.dataset.isMiss = 'true';
+            } else {
+                blockElement.textContent = value;
+                blockElement.style.backgroundColor = blockColors[value];
+                blockElement.dataset.value = value;
+                blockElement.dataset.isMiss = 'false';
+            }
+            
+            // Set block to be draggable
+            blockElement.setAttribute('draggable', 'true');
+            
+            // Add drag listeners
+            blockElement.addEventListener('dragstart', () => {
+                draggedBlock = blockElement;
+                setTimeout(() => blockElement.classList.add('dragging'), 0);
+            });
+            
+            blockElement.addEventListener('dragend', () => {
+                setTimeout(() => blockElement.classList.remove('dragging'), 0);
+                draggedBlock = null;
+            });
+            
+            dropZoneElement.appendChild(blockElement);
+            dropZoneBlocks.push(blockElement);
+        }
+    }
 
-        if (value === 'miss') {
-            blockElement.textContent = 'Miss';
-            blockElement.style.backgroundColor = blockColors['miss'];
-            blockElement.dataset.value = 'miss';
-            blockElement.dataset.isMiss = 'true';
-        } else {
-            blockElement.textContent = value;
-            blockElement.style.backgroundColor = blockColors[value];
-            blockElement.dataset.value = value;
-            blockElement.dataset.isMiss = 'false';
+    function handleDrop(column) {
+        if (!draggedBlock) return;
+
+        // Handle the "Miss" block drop
+        if (draggedBlock.dataset.isMiss === 'true') {
+            removeBlockFromDropZone(draggedBlock);
+            return;
         }
 
-        // Add click listener to the block in the drop zone
-        blockElement.addEventListener('click', () => {
-            // Clear any previous selection
-            if (selectedBlock) {
-                selectedBlock.classList.remove('selected');
-            }
-
-            // If it's a miss block, handle its special behavior.
-            if (blockElement.dataset.isMiss === 'true') {
-                // Miss blocks just vanish when clicked.
-                dropZoneElement.removeChild(blockElement);
-                const index = dropZoneBlocks.indexOf(blockElement);
-                if (index > -1) {
-                    dropZoneBlocks.splice(index, 1);
-                }
-                selectedBlock = null;
-            } else {
-                // Select this block for placement.
-                selectedBlock = blockElement;
-                selectedBlock.classList.add('selected');
-            }
-        });
-
-        dropZoneElement.appendChild(blockElement);
-        dropZoneBlocks.push(blockElement);
+        // Handle dropping a regular number block
+        const blockValue = parseInt(draggedBlock.dataset.value);
+        placeBlockInGrid(blockValue, column);
+        removeBlockFromDropZone(draggedBlock);
     }
-}
-
-
-    function fillDropZone() {
-        // Logic to fill the drop zone with blocks from the selection.
+    
+    function removeBlockFromDropZone(block) {
+        const index = dropZoneBlocks.indexOf(block);
+        if (index > -1) {
+            dropZoneBlocks.splice(index, 1);
+        }
+        block.remove();
     }
 
-    function handleGridClick(column) {
-        // Logic for when a column in the grid is clicked.
-        // This will place the selected drop zone block into the grid.
+    function placeBlockInGrid(value, column) {
+        // This is where the core placement and merge logic will go
+        console.log(`Attempting to place block ${value} in column ${column}`);
     }
 
     initializeGame();
