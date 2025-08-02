@@ -19,7 +19,7 @@ Document.addEventListener('DOMContentLoaded', () => {
     // Game state variables
     let grid = []; // 5x5 grid
     let dropZoneBlocks = [];
-    let draggedBlockElement = null; // The DOM element being dragged
+    let selectedBlockElement = null; // The DOM element selected for placing
     let highScore = 0;
     let currentScore = 0;
 
@@ -60,7 +60,6 @@ Document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createEmptyGrid() {
-        // Clear the grid before recreating it
         while (gameGridElement.firstChild) {
             gameGridElement.firstChild.remove();
         }
@@ -75,19 +74,7 @@ Document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.row = i;
                 cell.dataset.col = j;
                 
-                // Allow dropping on the grid cells
-                cell.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    // Add a visual cue for dropping
-                    e.target.classList.add('drag-over');
-                });
-                
-                cell.addEventListener('dragleave', e => {
-                    // Remove the visual cue
-                    e.target.classList.remove('drag-over');
-                });
-                
-                cell.addEventListener('drop', e => handleDrop(e, j));
+                cell.addEventListener('click', () => handleGridCellClick(i, j));
                 
                 gameGridElement.appendChild(cell);
             }
@@ -96,8 +83,36 @@ Document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateScores() {
+        currentScore = grid.flat().reduce((sum, value) => sum + (value || 0), 0);
         currentScoreValueElement.textContent = currentScore;
-        highScoreValueElement.textContent = highScore;
+        if (currentScore > highScore) {
+            highScore = currentScore;
+            highScoreValueElement.textContent = highScore;
+        }
+
+        // Highlight the highest number on the grid
+        highlightHighestBlock();
+    }
+    
+    function highlightHighestBlock() {
+        let highestValue = 0;
+        let highestBlockCell = null;
+        
+        // Remove existing highlights
+        document.querySelectorAll('.grid-cell.highest').forEach(cell => cell.classList.remove('highest'));
+
+        grid.forEach((row, i) => {
+            row.forEach((value, j) => {
+                if (value !== null && value > highestValue) {
+                    highestValue = value;
+                    highestBlockCell = gameGridElement.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+                }
+            });
+        });
+
+        if (highestBlockCell) {
+            highestBlockCell.classList.add('highest');
+        }
     }
 
     // --- Game Logic Functions ---
@@ -119,50 +134,46 @@ Document.addEventListener('DOMContentLoaded', () => {
                 blockElement.dataset.isMiss = 'false';
             }
             
-            // Set block to be draggable
-            blockElement.setAttribute('draggable', 'true');
-            
-            // Add drag listeners
-            blockElement.addEventListener('dragstart', e => {
-                console.log('Drag started!');
-                // Store the element being dragged
-                draggedBlockElement = blockElement;
-                e.dataTransfer.setData('text/plain', blockElement.dataset.value);
-                // The `setTimeout` is necessary to ensure the class is added after the drag start
-                setTimeout(() => blockElement.classList.add('dragging'), 0);
-            });
-            
-            blockElement.addEventListener('dragend', () => {
-                console.log('Drag ended.');
-                // Reset the dragged block and remove the visual cue
-                draggedBlockElement = null;
-                blockElement.classList.remove('dragging');
-            });
+            blockElement.addEventListener('click', () => handleDropZoneClick(blockElement));
             
             dropZoneElement.appendChild(blockElement);
             dropZoneBlocks.push(blockElement);
         }
     }
 
-    function handleDrop(e, column) {
-        e.preventDefault(); // Prevents default browser drop behavior
-        const cell = e.target;
-        cell.classList.remove('drag-over'); // Reset visual cue
+    function handleDropZoneClick(block) {
+        // Remove highlight from previous selected block
+        if (selectedBlockElement) {
+            selectedBlockElement.classList.remove('selected');
+        }
         
-        if (!draggedBlockElement) return;
+        // Set new selected block
+        selectedBlockElement = block;
+        selectedBlockElement.classList.add('selected');
         
-        console.log(`Dropped block with value ${draggedBlockElement.dataset.value} into column ${column}`);
+        console.log(`Block with value ${block.dataset.value} is selected.`);
+    }
 
-        // Handle the "Miss" block drop
-        if (draggedBlockElement.dataset.isMiss === 'true') {
-            removeBlockFromDropZone(draggedBlockElement);
+    function handleGridCellClick(row, column) {
+        if (!selectedBlockElement) {
+            console.log('No block is selected in the drop zone.');
             return;
         }
 
-        // Handle dropping a regular number block
-        const blockValue = parseInt(draggedBlockElement.dataset.value);
+        // Handle the "Miss" block placement
+        if (selectedBlockElement.dataset.isMiss === 'true') {
+            // A "Miss" block is just removed, as per the rules
+            removeBlockFromDropZone(selectedBlockElement);
+            selectedBlockElement = null; // Unselect the block
+            return;
+        }
+
+        const blockValue = parseInt(selectedBlockElement.dataset.value);
         placeBlockInGrid(blockValue, column);
-        removeBlockFromDropZone(draggedBlockElement);
+        
+        // Block is placed, so remove it from the drop zone
+        removeBlockFromDropZone(selectedBlockElement);
+        selectedBlockElement = null; // Unselect the block
     }
     
     function removeBlockFromDropZone(block) {
@@ -174,7 +185,6 @@ Document.addEventListener('DOMContentLoaded', () => {
     }
 
     function placeBlockInGrid(value, column) {
-        // Find the lowest empty cell in the column
         let rowIndex = -1;
         for (let i = grid.length - 1; i >= 0; i--) {
             if (grid[i][column] === null) {
@@ -183,7 +193,6 @@ Document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // If there is an empty cell in the column, place the block
         if (rowIndex !== -1) {
             console.log(`Placing block ${value} at grid[${rowIndex}][${column}]`);
             grid[rowIndex][column] = value;
@@ -193,12 +202,107 @@ Document.addEventListener('DOMContentLoaded', () => {
             cell.textContent = value;
             cell.style.backgroundColor = blockColors[value];
             
-            // TODO: Implement merge logic here
-            // checkMerge(rowIndex, column);
+            // Start the merge process from the newly placed block
+            checkMerge(rowIndex, column);
+
+            updateScores();
         } else {
             console.log(`Column ${column} is full. Block not placed.`);
             // You might want to add a visual or sound cue here
         }
+    }
+
+    function checkMerge(row, col) {
+        const value = grid[row][col];
+        if (value === null) return;
+        
+        const neighbors = [
+            { r: row - 1, c: col }, // Above
+            { r: row + 1, c: col }, // Below
+            { r: row, c: col - 1 }, // Left
+            { r: row, c: col + 1 }  // Right
+        ];
+        
+        let merged = false;
+        
+        neighbors.forEach(neighbor => {
+            const { r, c } = neighbor;
+            if (r >= 0 && r < 5 && c >= 0 && c < 5 && grid[r][c] === value) {
+                // Perform merge
+                const mergedValue = value * 2;
+                
+                // Clear the original cells
+                grid[row][col] = null;
+                grid[r][c] = null;
+                
+                const cell1 = gameGridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                cell1.textContent = '';
+                cell1.style.backgroundColor = '';
+
+                const cell2 = gameGridElement.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                cell2.textContent = '';
+                cell2.style.backgroundColor = '';
+                
+                // Find the new lowest position for the merged block in the same column as one of the original blocks
+                let newCol = col;
+                let newRowIndex = -1;
+                for (let i = grid.length - 1; i >= 0; i--) {
+                    if (grid[i][newCol] === null) {
+                        newRowIndex = i;
+                        break;
+                    }
+                }
+                
+                if (newRowIndex !== -1) {
+                    grid[newRowIndex][newCol] = mergedValue;
+                    const newCell = gameGridElement.querySelector(`[data-row="${newRowIndex}"][data-col="${newCol}"]`);
+                    newCell.textContent = mergedValue;
+                    newCell.style.backgroundColor = blockColors[mergedValue];
+
+                    // Recursively check for new merges
+                    checkMerge(newRowIndex, newCol);
+                }
+
+                merged = true;
+            }
+        });
+
+        if (merged) {
+            // After all merges, re-arrange the grid so blocks fall down
+            gravity();
+        }
+    }
+
+    function gravity() {
+        for (let col = 0; col < 5; col++) {
+            let emptySpaces = [];
+            for (let row = 4; row >= 0; row--) {
+                if (grid[row][col] === null) {
+                    emptySpaces.push(row);
+                } else if (emptySpaces.length > 0) {
+                    // Move the block down
+                    const newRow = emptySpaces.shift();
+                    const oldRow = row;
+                    
+                    // Update grid data
+                    grid[newRow][col] = grid[oldRow][col];
+                    grid[oldRow][col] = null;
+                    
+                    // Update DOM
+                    const oldCell = gameGridElement.querySelector(`[data-row="${oldRow}"][data-col="${col}"]`);
+                    const newCell = gameGridElement.querySelector(`[data-row="${newRow}"][data-col="${col}"]`);
+
+                    newCell.textContent = oldCell.textContent;
+                    newCell.style.backgroundColor = oldCell.style.backgroundColor;
+                    
+                    oldCell.textContent = '';
+                    oldCell.style.backgroundColor = '';
+
+                    emptySpaces.push(oldRow);
+                }
+            }
+        }
+        updateScores();
     }
 
     initializeGame();
