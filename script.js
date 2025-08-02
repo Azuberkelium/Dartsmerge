@@ -1,5 +1,8 @@
 Document.addEventListener('DOMContentLoaded', () => {
 
+    // A simple console log to confirm the script is running
+    console.log("Script is running and the DOM is loaded!");
+
     const blockColors = {
         2: '#FF6347',    // Tomato
         4: '#FF8C00',    // DarkOrange
@@ -37,6 +40,7 @@ Document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createBlockSelection() {
+        // This line grabs all the numbers (2, 4, 8, etc.) from the blockColors object.
         const blockValues = Object.keys(blockColors).map(Number).filter(v => !isNaN(v)).sort((a, b) => a - b);
         blockValues.forEach(value => {
             const block = document.createElement('div');
@@ -45,17 +49,16 @@ Document.addEventListener('DOMContentLoaded', () => {
             block.textContent = value;
             block.dataset.value = value;
             blockSelectionElement.appendChild(block);
-
             block.addEventListener('click', () => handleBlockSelection(value));
         });
 
+        // Add the 'Miss' block
         const missBlock = document.createElement('div');
         missBlock.className = 'number-block';
         missBlock.style.backgroundColor = blockColors['miss'];
         missBlock.textContent = 'Miss';
         missBlock.dataset.value = 'miss';
         blockSelectionElement.appendChild(missBlock);
-
         missBlock.addEventListener('click', () => handleBlockSelection('miss'));
     }
 
@@ -74,7 +77,6 @@ Document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.row = i;
                 cell.dataset.col = j;
                 
-                // Now, when you click on a cell, we know its column
                 cell.addEventListener('click', () => handleGridCellClick(j));
                 
                 gameGridElement.appendChild(cell);
