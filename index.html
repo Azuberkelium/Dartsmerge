@@ -7,21 +7,30 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
-        <h1>DartsMerge</h1>
-        <div class="score-container">
-            <div class="high-score">High Score: <span id="high-score-value">0</span></div>
-            <div class="current-score">Current Score: <span id="current-score-value">0</span></div>
+    <h1>DartsMerge</h1>
+    <div class="score-container">
+        <div class="score-box">
+            <h2>High Score:</h2>
+            <span id="high-score-value">0</span>
         </div>
+        <div class="score-box">
+            <h2>Current Score:</h2>
+            <span id="current-score-value">0</span>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div id="game-grid"></div>
+    </div>
 
-        <div class="block-selection">
-            </div>
-        
-        <div class="drop-zone" id="drop-zone">
-            </div>
+    <div class="drop-zone-container">
+        <h2>Drop Zone</h2>
+        <div id="drop-zone"></div>
+    </div>
 
-        <div class="game-grid" id="game-grid">
-            </div>
+    <div class="block-selection-container">
+        <h2>Block Selection</h2>
+        <div class="block-selection"></div>
     </div>
 
     <script src="script.js"></script>
