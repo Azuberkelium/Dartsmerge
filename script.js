@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+Document.addEventListener('DOMContentLoaded', () => {
 
     const blockColors = {
         2: '#FF6347',    // Tomato
@@ -60,6 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createEmptyGrid() {
+        // Clear the grid before recreating it
+        while (gameGridElement.firstChild) {
+            gameGridElement.firstChild.remove();
+        }
+
         grid = [];
         for (let i = 0; i < 5; i++) {
             const row = [];
@@ -73,11 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Allow dropping on the grid cells
                 cell.addEventListener('dragover', e => {
                     e.preventDefault();
-                    cell.style.backgroundColor = '#ddd'; // Visual cue for dropping
+                    // Add a visual cue for dropping
+                    e.target.classList.add('drag-over');
                 });
                 
                 cell.addEventListener('dragleave', e => {
-                    cell.style.backgroundColor = '#eee';
+                    // Remove the visual cue
+                    e.target.classList.remove('drag-over');
                 });
                 
                 cell.addEventListener('drop', e => handleDrop(e, j));
@@ -118,13 +125,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add drag listeners
             blockElement.addEventListener('dragstart', e => {
                 console.log('Drag started!');
+                // Store the element being dragged
                 draggedBlockElement = blockElement;
                 e.dataTransfer.setData('text/plain', blockElement.dataset.value);
+                // The `setTimeout` is necessary to ensure the class is added after the drag start
+                setTimeout(() => blockElement.classList.add('dragging'), 0);
             });
             
             blockElement.addEventListener('dragend', () => {
                 console.log('Drag ended.');
+                // Reset the dragged block and remove the visual cue
                 draggedBlockElement = null;
+                blockElement.classList.remove('dragging');
             });
             
             dropZoneElement.appendChild(blockElement);
@@ -135,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDrop(e, column) {
         e.preventDefault(); // Prevents default browser drop behavior
         const cell = e.target;
-        cell.style.backgroundColor = '#eee'; // Reset visual cue
+        cell.classList.remove('drag-over'); // Reset visual cue
         
         if (!draggedBlockElement) return;
         
@@ -162,11 +174,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function placeBlockInGrid(value, column) {
-        // This is where the core placement and merge logic will go
-        console.log(`Attempting to place block ${value} in column ${column}`);
+        // Find the lowest empty cell in the column
+        let rowIndex = -1;
+        for (let i = grid.length - 1; i >= 0; i--) {
+            if (grid[i][column] === null) {
+                rowIndex = i;
+                break;
+            }
+        }
+
+        // If there is an empty cell in the column, place the block
+        if (rowIndex !== -1) {
+            console.log(`Placing block ${value} at grid[${rowIndex}][${column}]`);
+            grid[rowIndex][column] = value;
+            
+            // Update the visual representation of the grid
+            const cell = gameGridElement.querySelector(`[data-row="${rowIndex}"][data-col="${column}"]`);
+            cell.textContent = value;
+            cell.style.backgroundColor = blockColors[value];
+            
+            // TODO: Implement merge logic here
+            // checkMerge(rowIndex, column);
+        } else {
+            console.log(`Column ${column} is full. Block not placed.`);
+            // You might want to add a visual or sound cue here
+        }
     }
 
     initializeGame();
 });
-
 
