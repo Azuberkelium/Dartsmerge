@@ -1,0 +1,112 @@
+body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+    margin: 0;
+}
+
+.game-container {
+    text-align: center;
+}
+
+h1 {
+    color: #333;
+}
+
+.score-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 10px 0;
+    font-size: 1.2em;
+}
+
+.block-selection {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.number-block {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.number-block:hover {
+    transform: scale(1.05);
+}
+
+.drop-zone {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    border: 2px dashed #ccc;
+    padding: 10px;
+    margin-bottom: 20px;
+    height: 80px;
+}
+
+.drop-zone-block {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.drop-zone-block.selected {
+    box-shadow: 0 0 10px 5px gold;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 60px);
+    grid-template-rows: repeat(5, 60px);
+    gap: 5px;
+    background-color: #ccc;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.grid-cell {
+    width: 60px;
+    height: 60px;
+    background-color: #eee;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.highest-block {
+    animation: glow 1.5s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 10px 5px gold; }
+    to { box-shadow: 0 0 20px 10px gold; }
+}
+
