@@ -85,10 +85,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Game Logic Functions (to be filled in) ---
 
-    function handleBlockSelection(value) {
-        // Logic for when a block is clicked from the top selection
-        // to add it to the drop zone.
+  function handleBlockSelection(value) {
+    // Only add to the drop zone if there's space.
+    if (dropZoneBlocks.length < 3) {
+        const blockElement = document.createElement('div');
+        blockElement.className = 'drop-zone-block';
+
+        if (value === 'miss') {
+            blockElement.textContent = 'Miss';
+            blockElement.style.backgroundColor = blockColors['miss'];
+            blockElement.dataset.value = 'miss';
+            blockElement.dataset.isMiss = 'true';
+        } else {
+            blockElement.textContent = value;
+            blockElement.style.backgroundColor = blockColors[value];
+            blockElement.dataset.value = value;
+            blockElement.dataset.isMiss = 'false';
+        }
+
+        // Add click listener to the block in the drop zone
+        blockElement.addEventListener('click', () => {
+            // Clear any previous selection
+            if (selectedBlock) {
+                selectedBlock.classList.remove('selected');
+            }
+
+            // If it's a miss block, handle its special behavior.
+            if (blockElement.dataset.isMiss === 'true') {
+                // Miss blocks just vanish when clicked.
+                dropZoneElement.removeChild(blockElement);
+                const index = dropZoneBlocks.indexOf(blockElement);
+                if (index > -1) {
+                    dropZoneBlocks.splice(index, 1);
+                }
+                selectedBlock = null;
+            } else {
+                // Select this block for placement.
+                selectedBlock = blockElement;
+                selectedBlock.classList.add('selected');
+            }
+        });
+
+        dropZoneElement.appendChild(blockElement);
+        dropZoneBlocks.push(blockElement);
     }
+}
+
 
     function fillDropZone() {
         // Logic to fill the drop zone with blocks from the selection.
