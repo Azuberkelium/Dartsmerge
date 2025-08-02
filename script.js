@@ -1,122 +1,289 @@
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #2c3e50;
-    color: #ecf0f1;
-    margin: 0;
-    padding: 20px;
-}
+Document.addEventListener('DOMContentLoaded', () => {
 
-h1 {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-}
+    const blockColors = {
+        2: '#FF6347',    // Tomato
+        4: '#FF8C00',    // DarkOrange
+        8: '#FFD700',    // Gold
+        16: '#32CD32',   // LimeGreen
+        32: '#00BFFF',   // DeepSkyBlue
+        64: '#4B0082',   // Indigo
+        128: '#8A2BE2',  // BlueViolet
+        256: '#00CED1',  // DarkTurquoise
+        512: '#DC143C',  // Crimson
+        1024: '#ADFF2F', // GreenYellow
+        2048: '#008080', // Teal
+        4096: '#800080', // Purple
+        'miss': '#696969' // DimGray
+    };
 
-.score-container {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    max-width: 500px;
-    margin-bottom: 20px;
-}
+    // Game state variables
+    let grid = []; // 5x5 grid
+    let dropZoneBlocks = [];
+    let selectedBlockElement = null; // The DOM element selected for placing
+    let highScore = 0;
+    let currentScore = 0;
 
-.score-box {
-    text-align: center;
-    background-color: #34495e;
-    padding: 10px 20px;
-    border-radius: 8px;
-}
+    const gameGridElement = document.getElementById('game-grid');
+    const dropZoneElement = document.getElementById('drop-zone');
+    const blockSelectionElement = document.querySelector('.block-selection');
+    const highScoreValueElement = document.getElementById('high-score-value');
+    const currentScoreValueElement = document.getElementById('current-score-value');
 
-#game-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 80px);
-    grid-template-rows: repeat(5, 80px);
-    gap: 5px;
-    background-color: #34495e;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
+    // --- Game Initialization ---
+    function initializeGame() {
+        createBlockSelection();
+        createEmptyGrid();
+        updateScores();
+    }
 
-.grid-cell {
-    width: 80px;
-    height: 80px;
-    background-color: #465a6f;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
+    function createBlockSelection() {
+        const blockValues = Object.keys(blockColors).map(Number).filter(v => !isNaN(v)).sort((a, b) => a - b);
+        blockValues.forEach(value => {
+            const block = document.createElement('div');
+            block.className = 'number-block';
+            block.style.backgroundColor = blockColors[value];
+            block.textContent = value;
+            block.dataset.value = value;
+            blockSelectionElement.appendChild(block);
 
-.grid-cell:hover {
-    transform: scale(1.05);
-}
+            block.addEventListener('click', () => handleBlockSelection(value));
+        });
 
-.grid-cell.highest {
-    animation: glow-highest 1.5s infinite alternate;
-}
+        const missBlock = document.createElement('div');
+        missBlock.className = 'number-block';
+        missBlock.style.backgroundColor = blockColors['miss'];
+        missBlock.textContent = 'Miss';
+        missBlock.dataset.value = 'miss';
+        blockSelectionElement.appendChild(missBlock);
 
-@keyframes glow-highest {
-    from { box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.7); }
-    to { box-shadow: 0 0 25px 8px rgba(255, 215, 0, 1); }
-}
+        missBlock.addEventListener('click', () => handleBlockSelection('miss'));
+    }
 
-.drop-zone-container, .block-selection-container {
-    margin-top: 20px;
-    text-align: center;
-}
+    function createEmptyGrid() {
+        while (gameGridElement.firstChild) {
+            gameGridElement.firstChild.remove();
+        }
 
-#drop-zone {
-    display: flex;
-    gap: 10px;
-    min-height: 80px;
-    background-color: #34495e;
-    border: 2px dashed #95a5a6;
-    padding: 10px;
-    border-radius: 8px;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 500px;
-}
+        grid = [];
+        for (let i = 0; i < 5; i++) {
+            const row = [];
+            for (let j = 0; j < 5; j++) {
+                row.push(null);
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.dataset.row = i;
+                cell.dataset.col = j;
+                
+                cell.addEventListener('click', () => handleGridCellClick(j));
+                
+                gameGridElement.appendChild(cell);
+            }
+            grid.push(row);
+        }
+    }
 
-.drop-zone-block, .number-block {
-    width: 70px;
-    height: 70px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease-in-out;
-}
+    function updateScores() {
+        currentScore = grid.flat().reduce((sum, value) => sum + (value || 0), 0);
+        currentScoreValueElement.textContent = currentScore;
+        if (currentScore > highScore) {
+            highScore = currentScore;
+            highScoreValueElement.textContent = highScore;
+        }
 
-.drop-zone-block.selected {
-    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.7);
-    border: 2px solid white;
-}
+        highlightHighestBlock();
+    }
+    
+    function highlightHighestBlock() {
+        let highestValue = 0;
+        let highestBlockCell = null;
+        
+        document.querySelectorAll('.grid-cell.highest').forEach(cell => cell.classList.remove('highest'));
 
-.drop-zone-block:hover, .number-block:hover {
-    transform: scale(1.1);
-}
+        grid.forEach((row, i) => {
+            row.forEach((value, j) => {
+                if (value !== null && value > highestValue) {
+                    highestValue = value;
+                    highestBlockCell = gameGridElement.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+                }
+            });
+        });
 
-.block-selection {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 10px;
-    width: 100%;
-    max-width: 500px;
-}
+        if (highestBlockCell) {
+            highestBlockCell.classList.add('highest');
+        }
+    }
+
+    function handleBlockSelection(value) {
+        if (dropZoneBlocks.length < 3) {
+            const blockElement = document.createElement('div');
+            blockElement.className = 'drop-zone-block';
+            
+            if (value === 'miss') {
+                blockElement.textContent = 'Miss';
+                blockElement.style.backgroundColor = blockColors['miss'];
+                blockElement.dataset.value = 'miss';
+                blockElement.dataset.isMiss = 'true';
+            } else {
+                blockElement.textContent = value;
+                blockElement.style.backgroundColor = blockColors[value];
+                blockElement.dataset.value = value;
+                blockElement.dataset.isMiss = 'false';
+            }
+            
+            blockElement.addEventListener('click', () => handleDropZoneClick(blockElement));
+            
+            dropZoneElement.appendChild(blockElement);
+            dropZoneBlocks.push(blockElement);
+        }
+    }
+
+    function handleDropZoneClick(block) {
+        if (selectedBlockElement) {
+            selectedBlockElement.classList.remove('selected');
+        }
+        
+        selectedBlockElement = block;
+        selectedBlockElement.classList.add('selected');
+    }
+
+    function handleGridCellClick(column) {
+        if (!selectedBlockElement) {
+            return;
+        }
+
+        if (selectedBlockElement.dataset.isMiss === 'true') {
+            removeBlockFromDropZone(selectedBlockElement);
+            selectedBlockElement = null;
+            return;
+        }
+
+        const blockValue = parseInt(selectedBlockElement.dataset.value);
+        placeBlockInGrid(blockValue, column);
+        
+        removeBlockFromDropZone(selectedBlockElement);
+        selectedBlockElement = null;
+    }
+    
+    function removeBlockFromDropZone(block) {
+        const index = dropZoneBlocks.indexOf(block);
+        if (index > -1) {
+            dropZoneBlocks.splice(index, 1);
+        }
+        block.remove();
+    }
+
+    function placeBlockInGrid(value, column) {
+        let rowIndex = -1;
+        for (let i = grid.length - 1; i >= 0; i--) {
+            if (grid[i][column] === null) {
+                rowIndex = i;
+                break;
+            }
+        }
+
+        if (rowIndex !== -1) {
+            grid[rowIndex][column] = value;
+            
+            const cell = gameGridElement.querySelector(`[data-row="${rowIndex}"][data-col="${column}"]`);
+            cell.textContent = value;
+            cell.style.backgroundColor = blockColors[value];
+            
+            checkMerge(rowIndex, column);
+        } else {
+            console.log(`Column ${column} is full.`);
+        }
+    }
+
+    function checkMerge(row, col) {
+        const value = grid[row][col];
+        if (value === null) return;
+        
+        const neighbors = [
+            { r: row - 1, c: col }, // Above
+            { r: row + 1, c: col }, // Below
+            { r: row, c: col - 1 }, // Left
+            { r: row, c: col + 1 }  // Right
+        ];
+        
+        let merged = false;
+        
+        neighbors.forEach(neighbor => {
+            const { r, c } = neighbor;
+            if (r >= 0 && r < 5 && c >= 0 && c < 5 && grid[r][c] === value) {
+                const mergedValue = value * 2;
+                
+                // Clear the original cells
+                grid[row][col] = null;
+                grid[r][c] = null;
+                
+                const cell1 = gameGridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                cell1.textContent = '';
+                cell1.style.backgroundColor = '';
+
+                const cell2 = gameGridElement.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                cell2.textContent = '';
+                cell2.style.backgroundColor = '';
+                
+                // Find the new lowest position for the merged block
+                let newCol = col;
+                let newRowIndex = -1;
+                for (let i = grid.length - 1; i >= 0; i--) {
+                    if (grid[i][newCol] === null) {
+                        newRowIndex = i;
+                        break;
+                    }
+                }
+                
+                if (newRowIndex !== -1) {
+                    grid[newRowIndex][newCol] = mergedValue;
+                    const newCell = gameGridElement.querySelector(`[data-row="${newRowIndex}"][data-col="${newCol}"]`);
+                    newCell.textContent = mergedValue;
+                    newCell.style.backgroundColor = blockColors[mergedValue];
+
+                    checkMerge(newRowIndex, newCol);
+                }
+
+                merged = true;
+            }
+        });
+
+        if (merged) {
+            gravity();
+        } else {
+             // If no merges happened, still update the scores
+            updateScores();
+        }
+    }
+
+    function gravity() {
+        for (let col = 0; col < 5; col++) {
+            let emptySpaces = [];
+            for (let row = 4; row >= 0; row--) {
+                if (grid[row][col] === null) {
+                    emptySpaces.push(row);
+                } else if (emptySpaces.length > 0) {
+                    const newRow = emptySpaces.shift();
+                    const oldRow = row;
+                    
+                    grid[newRow][col] = grid[oldRow][col];
+                    grid[oldRow][col] = null;
+                    
+                    const oldCell = gameGridElement.querySelector(`[data-row="${oldRow}"][data-col="${col}"]`);
+                    const newCell = gameGridElement.querySelector(`[data-row="${newRow}"][data-col="${col}"]`);
+
+                    newCell.textContent = oldCell.textContent;
+                    newCell.style.backgroundColor = oldCell.style.backgroundColor;
+                    
+                    oldCell.textContent = '';
+                    oldCell.style.backgroundColor = '';
+
+                    emptySpaces.push(oldRow);
+                }
+            }
+        }
+        updateScores();
+    }
+
+    initializeGame();
+});
+
