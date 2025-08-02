@@ -1,123 +1,122 @@
 body {
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
-    background-color: #f0f0f0;
+    background-color: #2c3e50;
+    color: #ecf0f1;
     margin: 0;
-}
-
-.game-container {
-    text-align: center;
+    padding: 20px;
 }
 
 h1 {
-    color: #333;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
 }
 
 .score-container {
     display: flex;
     justify-content: space-around;
-    margin: 10px 0;
-    font-size: 1.2em;
-}
-
-.block-selection {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
+    width: 100%;
+    max-width: 500px;
     margin-bottom: 20px;
 }
 
-.number-block {
-    width: 60px;
-    height: 60px;
+.score-box {
+    text-align: center;
+    background-color: #34495e;
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+#game-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 80px);
+    grid-template-rows: repeat(5, 80px);
+    gap: 5px;
+    background-color: #34495e;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.grid-cell {
+    width: 80px;
+    height: 80px;
+    background-color: #465a6f;
+    border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5em;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.grid-cell:hover {
+    transform: scale(1.05);
+}
+
+.grid-cell.highest {
+    animation: glow-highest 1.5s infinite alternate;
+}
+
+@keyframes glow-highest {
+    from { box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.7); }
+    to { box-shadow: 0 0 25px 8px rgba(255, 215, 0, 1); }
+}
+
+.drop-zone-container, .block-selection-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#drop-zone {
+    display: flex;
+    gap: 10px;
+    min-height: 80px;
+    background-color: #34495e;
+    border: 2px dashed #95a5a6;
+    padding: 10px;
+    border-radius: 8px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+.drop-zone-block, .number-block {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
     font-weight: bold;
     color: white;
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease-in-out;
 }
 
-.number-block:hover {
-    transform: scale(1.05);
-}
-
-.drop-zone {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    border: 2px dashed #ccc;
-    padding: 10px;
-    margin-bottom: 20px;
-    height: 80px;
-}
-
-.drop-zone-block {
-    width: 60px;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.drop-zone-block.selected {
-    box-shadow: 0 0 10px 5px gold;
-}
-
-.game-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 60px);
-    grid-template-rows: repeat(5, 60px);
-    gap: 5px;
-    background-color: #ccc;
-    padding: 5px;
-    border-radius: 10px;
-}
-
-.grid-cell {
-    width: 60px;
-    height: 60px;
-    background-color: #eee;
-    border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    color: white;
-    transition: background-color 0.3s, transform 0.3s;
-}
-
-.highest-block {
-    animation: glow 1.5s infinite alternate;
-}
-
-@keyframes glow {
-    from { box-shadow: 0 0 10px 5px gold; }
-    to { box-shadow: 0 0 20px 10px gold; }
-}
-
-/* Style for a selected block in the drop zone */
 .drop-zone-block.selected {
     box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.7);
     border: 2px solid white;
 }
 
-/* Style for the highest number block on the grid */
-.grid-cell.highest {
-    box-shadow: 0 0 15px 5px #ffd700; /* Gold glow */
+.drop-zone-block:hover, .number-block:hover {
+    transform: scale(1.1);
 }
 
+.block-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 500px;
+}
