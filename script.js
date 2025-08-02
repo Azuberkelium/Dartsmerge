@@ -74,6 +74,7 @@ Document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.row = i;
                 cell.dataset.col = j;
                 
+                // Now, when you click on a cell, we know its column
                 cell.addEventListener('click', () => handleGridCellClick(j));
                 
                 gameGridElement.appendChild(cell);
@@ -212,7 +213,6 @@ Document.addEventListener('DOMContentLoaded', () => {
             if (r >= 0 && r < 5 && c >= 0 && c < 5 && grid[r][c] === value) {
                 const mergedValue = value * 2;
                 
-                // Clear the original cells
                 grid[row][col] = null;
                 grid[r][c] = null;
                 
@@ -224,7 +224,6 @@ Document.addEventListener('DOMContentLoaded', () => {
                 cell2.textContent = '';
                 cell2.style.backgroundColor = '';
                 
-                // Find the new lowest position for the merged block
                 let newCol = col;
                 let newRowIndex = -1;
                 for (let i = grid.length - 1; i >= 0; i--) {
@@ -250,7 +249,6 @@ Document.addEventListener('DOMContentLoaded', () => {
         if (merged) {
             gravity();
         } else {
-             // If no merges happened, still update the scores
             updateScores();
         }
     }
@@ -286,4 +284,3 @@ Document.addEventListener('DOMContentLoaded', () => {
 
     initializeGame();
 });
-
