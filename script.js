@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Game state variables
     let grid = []; // 5x5 grid
     let dropZoneBlocks = [];
-    let draggedBlock = null; // The block being dragged
+    let draggedBlockElement = null; // The DOM element being dragged
     let highScore = 0;
     let currentScore = 0;
 
@@ -69,8 +69,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.className = 'grid-cell';
                 cell.dataset.row = i;
                 cell.dataset.col = j;
-                cell.addEventListener('dragover', e => e.preventDefault()); // Allows us to drop
-                cell.addEventListener('drop', () => handleDrop(j));
+                
+                // Allow dropping on the grid cells
+                cell.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    cell.style.backgroundColor = '#ddd'; // Visual cue for dropping
+                });
+                
+                cell.addEventListener('dragleave', e => {
+                    cell.style.backgroundColor = '#eee';
+                });
+                
+                cell.addEventListener('drop', e => handleDrop(e, j));
+                
                 gameGridElement.appendChild(cell);
             }
             grid.push(row);
@@ -78,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateScores() {
-        // We'll calculate the total sum of the grid here later
         currentScoreValueElement.textContent = currentScore;
         highScoreValueElement.textContent = highScore;
     }
@@ -106,14 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
             blockElement.setAttribute('draggable', 'true');
             
             // Add drag listeners
-            blockElement.addEventListener('dragstart', () => {
-                draggedBlock = blockElement;
-                setTimeout(() => blockElement.classList.add('dragging'), 0);
+            blockElement.addEventListener('dragstart', e => {
+                console.log('Drag started!');
+                draggedBlockElement = blockElement;
+                e.dataTransfer.setData('text/plain', blockElement.dataset.value);
             });
             
             blockElement.addEventListener('dragend', () => {
-                setTimeout(() => blockElement.classList.remove('dragging'), 0);
-                draggedBlock = null;
+                console.log('Drag ended.');
+                draggedBlockElement = null;
             });
             
             dropZoneElement.appendChild(blockElement);
@@ -121,19 +132,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleDrop(column) {
-        if (!draggedBlock) return;
+    function handleDrop(e, column) {
+        e.preventDefault(); // Prevents default browser drop behavior
+        const cell = e.target;
+        cell.style.backgroundColor = '#eee'; // Reset visual cue
+        
+        if (!draggedBlockElement) return;
+        
+        console.log(`Dropped block with value ${draggedBlockElement.dataset.value} into column ${column}`);
 
         // Handle the "Miss" block drop
-        if (draggedBlock.dataset.isMiss === 'true') {
-            removeBlockFromDropZone(draggedBlock);
+        if (draggedBlockElement.dataset.isMiss === 'true') {
+            removeBlockFromDropZone(draggedBlockElement);
             return;
         }
 
         // Handle dropping a regular number block
-        const blockValue = parseInt(draggedBlock.dataset.value);
+        const blockValue = parseInt(draggedBlockElement.dataset.value);
         placeBlockInGrid(blockValue, column);
-        removeBlockFromDropZone(draggedBlock);
+        removeBlockFromDropZone(draggedBlockElement);
     }
     
     function removeBlockFromDropZone(block) {
@@ -151,4 +168,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeGame();
 });
+
 
